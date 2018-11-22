@@ -28,6 +28,10 @@ namespace SimpleThings\EntityAudit;
  */
 class Revision
 {
+    public const TYPE_ADD = 'INS'; 
+    public const TYPE_UPDATE = 'UPD'; 
+    public const TYPE_DELETE = 'DEL'; 
+
     private $rev;
     private $timestamp;
     private $username;

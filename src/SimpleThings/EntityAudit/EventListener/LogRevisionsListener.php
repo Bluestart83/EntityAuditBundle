@@ -34,6 +34,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Persisters\Entity\BasicEntityPersister;
 use Doctrine\ORM\Persisters\Entity\EntityPersister;
 use SimpleThings\EntityAudit\AuditManager;
+use SimpleThings\EntityAudit\Revision;
 
 class LogRevisionsListener implements EventSubscriber
 {
@@ -211,7 +212,7 @@ class LogRevisionsListener implements EventSubscriber
             return;
         }
 
-        $this->saveRevisionEntityData($class, $this->getOriginalEntityData($entity), 'INS', $entity);
+        $this->saveRevisionEntityData($class, $this->getOriginalEntityData($entity), Revision::TYPE_ADD, $entity);
     }
 
     public function postUpdate(LifecycleEventArgs $eventArgs)
@@ -238,7 +239,7 @@ class LogRevisionsListener implements EventSubscriber
         }
 
         $entityData = array_merge($this->getOriginalEntityData($entity), $this->uow->getEntityIdentifier($entity));
-        $this->saveRevisionEntityData($class, $entityData, 'UPD', $entity);
+        $this->saveRevisionEntityData($class, $entityData, Revision::TYPE_UPDATE, $entity);
     }
 
     public function onFlush(OnFlushEventArgs $eventArgs)
@@ -268,7 +269,7 @@ class LogRevisionsListener implements EventSubscriber
             }
 
             $entityData = array_merge($this->getOriginalEntityData($entity), $this->uow->getEntityIdentifier($entity));
-            $this->saveRevisionEntityData($class, $entityData, 'DEL', $entity);
+            $this->saveRevisionEntityData($class, $entityData, Revision::TYPE_DELETE, $entity);
         }
 
         foreach ($this->uow->getScheduledEntityInsertions() as $entity) {
