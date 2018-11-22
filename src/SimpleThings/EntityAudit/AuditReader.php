@@ -530,16 +530,24 @@ class AuditReader
      */
     public function findRevisionHistory($project = null, $limit = 20, $offset = 0)
     {
-        $queryStr = "SELECT * FROM " . $this->config->getRevisionTableName();
+        $queryStr = 'SELECT * FROM ' . $this->config->getRevisionTableName();
         if($project) {
-            $queryStr .= " WHERE project = ".$project;
+            $queryStr .= " WHERE project = :project";
         }
         $queryStr .= " ORDER BY id DESC";
 
-        $query = $this->platform->modifyLimitQuery(
+        $queryStr = $this->platform->modifyLimitQuery(
             $queryStr, $limit, $offset
         );
-        $revisionsData = $this->em->getConnection()->fetchAll($query);
+
+        $statement = $this->em->getConnection()->prepare($queryStr);
+        if($project) {
+            $statement->bindValue('project', $project);
+        }
+        $statement->execute();
+        $revisionsData = $statement->fetchAll();
+
+        //dump($this->em);die;
 
         $revisions = array();
         foreach ($revisionsData AS $row) {
