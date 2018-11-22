@@ -142,7 +142,7 @@ class LogRevisionsListener implements EventSubscriber
                     'SET ' . $field . ' = ' . $placeholder . ' ' .
                     'WHERE ' . $this->config->getRevisionFieldName() . ' = ? ';
 
-                $params = array($value, $this->getRevisionId());
+                $params = array($value, $this->getRevisionId($entity));
 
                 $types = array();
 
@@ -211,7 +211,7 @@ class LogRevisionsListener implements EventSubscriber
             return;
         }
 
-        $this->saveRevisionEntityData($class, $this->getOriginalEntityData($entity), 'INS');
+        $this->saveRevisionEntityData($class, $this->getOriginalEntityData($entity), 'INS', $entity);
     }
 
     public function postUpdate(LifecycleEventArgs $eventArgs)
@@ -238,7 +238,7 @@ class LogRevisionsListener implements EventSubscriber
         }
 
         $entityData = array_merge($this->getOriginalEntityData($entity), $this->uow->getEntityIdentifier($entity));
-        $this->saveRevisionEntityData($class, $entityData, 'UPD');
+        $this->saveRevisionEntityData($class, $entityData, 'UPD', $entity);
     }
 
     public function onFlush(OnFlushEventArgs $eventArgs)
@@ -268,7 +268,7 @@ class LogRevisionsListener implements EventSubscriber
             }
 
             $entityData = array_merge($this->getOriginalEntityData($entity), $this->uow->getEntityIdentifier($entity));
-            $this->saveRevisionEntityData($class, $entityData, 'DEL');
+            $this->saveRevisionEntityData($class, $entityData, 'DEL', $entity);
         }
 
         foreach ($this->uow->getScheduledEntityInsertions() as $entity) {
@@ -307,14 +307,17 @@ class LogRevisionsListener implements EventSubscriber
         return $data;
     }
 
-    private function getRevisionId()
+    private function getRevisionId($entity)
     {
+        $projectId = $entity->getProject()->getId();
+
         if ($this->revisionId === null) {
             $this->conn->insert(
                 $this->config->getRevisionTableName(),
                 array(
                     'timestamp' => date_create('now'),
                     'username' => $this->config->getCurrentUsername(),
+                    'project' => $projectId
                 ),
                 array(
                     Type::DATETIME,
@@ -401,9 +404,9 @@ class LogRevisionsListener implements EventSubscriber
      * @param array         $entityData
      * @param string        $revType
      */
-    private function saveRevisionEntityData($class, $entityData, $revType)
+    private function saveRevisionEntityData($class, $entityData, $revType, $entity)
     {
-        $params = array($this->getRevisionId(), $revType);
+        $params = array($this->getRevisionId($entity), $revType);
         $types = array(\PDO::PARAM_INT, \PDO::PARAM_STR);
 
         $fields = array();
@@ -468,7 +471,8 @@ class LogRevisionsListener implements EventSubscriber
             $this->saveRevisionEntityData(
                 $this->em->getClassMetadata($class->rootEntityName),
                 $entityData,
-                $revType
+                $revType,
+                $entity
             );
         }
 

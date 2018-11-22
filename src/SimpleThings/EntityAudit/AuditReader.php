@@ -528,10 +528,16 @@ class AuditReader
      * @param int $offset
      * @return Revision[]
      */
-    public function findRevisionHistory($limit = 20, $offset = 0)
+    public function findRevisionHistory($project = null, $limit = 20, $offset = 0)
     {
+        $queryStr = "SELECT * FROM " . $this->config->getRevisionTableName();
+        if($project) {
+            $queryStr .= " WHERE project = ".$project;
+        }
+        $queryStr .= " ORDER BY id DESC";
+
         $query = $this->platform->modifyLimitQuery(
-            "SELECT * FROM " . $this->config->getRevisionTableName() . " ORDER BY id DESC", $limit, $offset
+            $queryStr, $limit, $offset
         );
         $revisionsData = $this->em->getConnection()->fetchAll($query);
 
@@ -540,7 +546,8 @@ class AuditReader
             $revisions[] = new Revision(
                 $row['id'],
                 \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $row['timestamp']),
-                $row['username']
+                $row['username'],
+                $row['project']
             );
         }
         return $revisions;
@@ -659,7 +666,8 @@ class AuditReader
             return new Revision(
                 $revisionsData[0]['id'],
                 \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $revisionsData[0]['timestamp']),
-                $revisionsData[0]['username']
+                $revisionsData[0]['username'],
+                $revisionsData[0]['project']
             );
         } else {
             throw new InvalidRevisionException($rev);
@@ -712,7 +720,8 @@ class AuditReader
             $revisions[] = new Revision(
                 $row['id'],
                 \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $row['timestamp']),
-                $row['username']
+                $row['username'],
+                $row['project']
             );
         }
 

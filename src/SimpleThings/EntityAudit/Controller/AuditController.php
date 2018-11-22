@@ -59,7 +59,7 @@ class AuditController extends Controller
     public function indexAction($page = 1)
     {
         $reader = $this->getAuditReader();
-        $revisions = $reader->findRevisionHistory(20, 20 * ($page - 1));
+        $revisions = $reader->findRevisionHistory(null, 20, 20 * ($page - 1));
 
         return $this->render('SimpleThingsEntityAuditBundle:Audit:index.html.twig', array(
             'revisions' => $revisions,
