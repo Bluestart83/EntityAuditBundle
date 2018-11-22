@@ -232,7 +232,7 @@ class AuditReader
         $whereSQL  = "e." . $this->config->getRevisionFieldName() ." <= ?";
 
         foreach ($class->identifier AS $idField) {
-            if (is_array($id) && count($id) > 0) {
+            if (is_array($idField) && count($idField) > 0) {
                 $idKeys = array_keys($id);
                 $columnName = $idKeys[0];
             } else if (isset($class->fieldMappings[$idField])) {
