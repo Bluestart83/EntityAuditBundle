@@ -94,6 +94,13 @@ class CreateSchemaListener implements EventSubscriber
             throw new \Exception(sprintf('Inheritance type "%s" is not yet supported', $cm->inheritanceType));
         }
 
+        /////////////////// Added
+        $revisionTable->addColumn('validated', 'boolean')->setNotnull(true);
+        $revisionTable->addIndex(array('validated'), 'validated_'.md5($revisionTable->getName()).'_idx');
+
+        $revisionTable->addIndex(array('project_id'), 'project_id_'.md5($revisionTable->getName()).'_idx');
+        ///////////////////
+
         $pkColumns = $entityTable->getPrimaryKey()->getColumns();
         $pkColumns[] = $this->config->getRevisionFieldName();
         $revisionTable->setPrimaryKey($pkColumns);

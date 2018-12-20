@@ -31,13 +31,19 @@
     <tr>
         <td>{{ field }}</td>
         <td>
-            {{ helper.showValue(value.old) }}
+            {% if not value.same %}
+                {{ helper.showValue(value.old) }}
+            {% endif %}
         </td>
         <td>
-            {{ helper.showValue(value.same) }}
+            {% if value.same %}
+                {{ helper.showValue(value.old) }}
+            {% endif %}
         </td>
         <td>
-            {{ helper.showValue(value.new) }}
+            {% if not value.same %}
+                {{ helper.showValue(value.new) }}
+            {% endif %}
         </td>
     </tr>
     {% endfor %}

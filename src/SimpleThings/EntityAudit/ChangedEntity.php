@@ -29,13 +29,17 @@ class ChangedEntity
     private $id;
     private $revType;
     private $entity;
+    private $rev;
+    private $username;
     
-    public function __construct($className, array $id, $revType, $entity)
+    public function __construct($className, array $id, $revType, $entity, $rev = null, $username=null)
     {
         $this->className = $className;
         $this->id = $id;
         $this->revType = $revType;
         $this->entity = $entity;
+        $this->rev = $rev;
+        $this->username = $username;
     }
     
     /**
@@ -70,4 +74,20 @@ class ChangedEntity
     {
         return $this->entity;
     }
+
+    /**
+     * @return object
+     */
+     public function getRevision()
+     {
+         return $this->revision;
+     }
+
+    /**
+     * @return object
+     */
+     public function getUsername()
+     {
+         return $this->username;
+     }
 }

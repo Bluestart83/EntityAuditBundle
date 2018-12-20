@@ -39,11 +39,21 @@ class ArrayDiff
             $old = array_key_exists($field, $oldData) ? $oldData[$field] : null;
             $new = array_key_exists($field, $newData) ? $newData[$field] : null;
 
-            if ($old == $new) {
-                $row = array('old' => '', 'new' => '', 'same' => $old);
-            } else {
-                $row = array('old' => $old, 'new' => $new, 'same' => '');
+            if( \is_array($old) || \is_array($new)) {
+                if ($old['id'] == $new['id']) {
+                    $row = array('old' => $old, 'new' => $old, 'same' => true);
+                } else {
+                    $row = array('old' => $old, 'new' => $new, 'same' => false);
+                }
             }
+            else {
+                if ($old == $new) {
+                    $row = array('old' => $old, 'new' => $old, 'same' => true);
+                } else {
+                    $row = array('old' => $old, 'new' => $new, 'same' => false);
+                }
+            }
+            
 
             $diff[$field] = $row;
         }

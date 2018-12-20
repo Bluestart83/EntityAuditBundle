@@ -36,6 +36,7 @@ class Revision
     private $timestamp;
     private $username;
     private $project;
+    private $validated;
 
     function __construct($rev, $timestamp, $username, $project)
     {
@@ -60,8 +61,8 @@ class Revision
         return $this->username;
     }
 
-    public function getProject()
+    public function isValidated()
     {
-        return $this->project;
+        return $this->validated;
     }
 }
