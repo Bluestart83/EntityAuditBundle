@@ -918,7 +918,14 @@ class AuditReader
         // External mapping
         foreach ($fieldsExternal AS $fieldName => $data) {
             $value = $metadata->getFieldValue($entity, $fieldName);
-            $return[$fieldName] = array('id' => $value->getId(), 'label'=> $value->__toString());
+            
+            $label = '(DELETED)';
+            try { // Manage deleted case
+                $label = $value->__toString();
+            }
+            catch(\Exception $e) {
+            }
+            $return[$fieldName] = array('id' => $value->getId(), 'label'=> $label);
             //dump ($metadata->getFieldValue($entity, 'project'));die;
         }
 
