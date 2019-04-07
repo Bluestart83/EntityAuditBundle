@@ -80,7 +80,7 @@ class ChangedEntity
      */
      public function getRevision()
      {
-         return $this->revision;
+         return $this->rev;
      }
 
     /**
