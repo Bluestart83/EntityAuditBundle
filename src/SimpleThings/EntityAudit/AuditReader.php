@@ -636,7 +636,7 @@ class AuditReader
 
         $idKey = $class->identifier[0];
         $query = "SELECT " . $columnList . " FROM " . $tableName . " e " . $joinSql 
-        . ' LEFT JOIN '.$tableName.' e2 ON e2.'.$idKey.'=e.'.$idKey.' AND e2.'.$this->config->getRevisionTypeFieldName().' > e.'.$this->config->getRevisionTypeFieldName()
+        . ' LEFT JOIN '.$tableName.' e2 ON e2.'.$idKey.'=e.'.$idKey.' AND e2.'.$this->config->getRevisionFieldName().' > e.'.$this->config->getRevisionFieldName()
         . " WHERE " . $whereSQL. ' AND e2.'.$idKey.' IS NULL'
         . ' GROUP BY e.'.$idKey;
 
