@@ -573,7 +573,7 @@ class AuditReader
     * Find all revisions since $revision for a class.
     * @param $validated Si vrai, on ne recherche que les éléments non déja validé manuellement
     */
-    public function findEntityChangesSinceRevision($className, $project, $revision, $validated = true) {
+    public function findEntityChangesSinceRevision($className, $project, $revision, $validated = true, $filterDeleted = true) {
         /** @var ClassMetadataInfo|ClassMetadata $class */
         $class = $this->em->getClassMetadata($className);
         
@@ -637,10 +637,14 @@ class AuditReader
         $idKey = $class->identifier[0];
         $query = "SELECT " . $columnList . " FROM " . $tableName . " e " . $joinSql 
         . ' LEFT JOIN '.$tableName.' e2 ON e2.'.$idKey.'=e.'.$idKey.' AND e2.'.$this->config->getRevisionFieldName().' > e.'.$this->config->getRevisionFieldName()
-        . " WHERE " . $whereSQL. ' AND e2.'.$idKey.' IS NULL'
-        . ' GROUP BY e.'.$idKey;
+        . ' WHERE ' . $whereSQL. ' AND e2.'.$idKey.' IS NULL';
 
-        //echo $query; die;
+        if($filterDeleted) {
+            $query .= ' AND e.revtype <> \''.Revision::TYPE_DELETE.'\''; // Filter DELETED
+        }
+        $query .= ' GROUP BY e.'.$idKey;
+
+       // echo $query; die;
         $revisionsData = $this->em->getConnection()->executeQuery($query, $params);
 
         $changedEntities = array();
