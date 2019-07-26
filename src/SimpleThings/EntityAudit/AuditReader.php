@@ -570,10 +570,11 @@ class AuditReader
 
     // ALI
     /**
-    * Find all revisions since $revision for a class.
-    * @param $validated Si vrai, on ne recherche que les éléments non déja validé manuellement
-    */
-    public function findEntityChangesSinceRevision($className, $project, $revision, $validated = true, $filterDeleted = true) {
+     * Find all revisions since $revision for a class.
+     * @param $validated Si vrai, on ne recherche que les éléments non déja validé manuellement
+     * @param $project Project Id
+     */
+    public function findEntityChangesSinceRevision($className, $project, $revision, $validated = true, $filterDeleted = true, $filterCreated=true) {
         /** @var ClassMetadataInfo|ClassMetadata $class */
         $class = $this->em->getClassMetadata($className);
         
@@ -641,6 +642,9 @@ class AuditReader
 
         if($filterDeleted) {
             $query .= ' AND e.revtype <> \''.Revision::TYPE_DELETE.'\''; // Filter DELETED
+        }
+        if($filterCreated) {
+            $query .= ' AND e.revtype <> \''.Revision::TYPE_ADD.'\''; // Filter ADDED
         }
         $query .= ' GROUP BY e.'.$idKey;
 
