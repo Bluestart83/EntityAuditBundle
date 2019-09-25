@@ -317,7 +317,7 @@ class LogRevisionsListener implements EventSubscriber
                 $this->config->getRevisionTableName(),
                 array(
                     'timestamp' => date_create('now'),
-                    'username' => $this->config->getCurrentUsername(),
+                    'user_id' => $this->config->getCurrentUsername(),
                     'project' => $projectId
                 ),
                 array(

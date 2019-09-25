@@ -28,7 +28,8 @@ class TokenStorageUsernameCallable
         /** @var TokenInterface $token */
         $token = $this->container->get('security.token_storage')->getToken();
         if (null !== $token && $token->isAuthenticated()) {
-            return $token->getUsername();
+            //return $token->getUsername();
+            return $token->getUser()->getId();
         }
     }
 }

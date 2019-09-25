@@ -34,15 +34,23 @@ class Revision
 
     private $rev;
     private $timestamp;
-    private $username;
+
+    private $user_id;
+    private $user_username;
+    private $user_firstName;
+    private $user_lastName;
+
     private $project;
     private $validated;
 
-    function __construct($rev, $timestamp, $username, $project)
+    function __construct($rev, $timestamp, $user_id, $user_username, $user_firstName, $user_lastName, $project)
     {
         $this->rev = $rev;
         $this->timestamp = $timestamp;
-        $this->username = $username;
+        $this->user_id = $user_id;
+        $this->user_username = $user_username;
+        $this->user_firstName = $user_firstName;
+        $this->user_lastName = $user_lastName;
         $this->project = $project;
     }
 
@@ -56,9 +64,24 @@ class Revision
         return $this->timestamp;
     }
 
-    public function getUsername()
+    public function getUserId()
     {
-        return $this->username;
+        return $this->user_id;
+    }
+
+    public function getUserFirstname()
+    {
+        return $this->user_firstName;
+    }
+
+    public function getUserLastName()
+    {
+        return $this->user_lastName;
+    }
+
+    public function getUserUsername()
+    {
+        return $this->user_username;
     }
 
     public function isValidated()

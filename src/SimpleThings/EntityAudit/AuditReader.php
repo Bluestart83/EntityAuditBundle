@@ -537,7 +537,8 @@ class AuditReader
      */
     public function findRevisionHistory($project = null, $limit = 20, $offset = 0)
     {
-        $queryStr = 'SELECT * FROM ' . $this->config->getRevisionTableName();
+        $queryStr = 'SELECT r.*, u.first_name, u.last_name, u.username FROM ' . $this->config->getRevisionTableName(). ' r';
+        $queryStr .= ' LEFT JOIN user u ON r.user_id = u.id';
         if($project) {
             $queryStr .= " WHERE project = :project";
         }
@@ -559,9 +560,12 @@ class AuditReader
         $revisions = array();
         foreach ($revisionsData AS $row) {
             $revisions[] = new Revision(
-                $row['id'],
-                \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $row['timestamp']),
-                $row['username'],
+                $row['r.id'],
+                \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $row['r.timestamp']),
+                $row['r.user_id'],
+                $row['u.username'],
+                $row['u.first_name'],
+                $row['u.last_name'],
                 $row['project']
             );
         }
@@ -762,14 +766,18 @@ class AuditReader
      */
     public function findRevision($rev)
     {
-        $query = "SELECT * FROM " . $this->config->getRevisionTableName() . " r WHERE r.id = ?";
+        $query = "SELECT r.*, u.first_name, u.last_name, u.username FROM " . $this->config->getRevisionTableName() . " r WHERE r.id = ?";
+        $query .= ' LEFT JOIN user u ON r.user_id = u.id';
         $revisionsData = $this->em->getConnection()->fetchAll($query, array($rev));
 
         if (count($revisionsData) == 1) {
             return new Revision(
-                $revisionsData[0]['id'],
-                \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $revisionsData[0]['timestamp']),
-                $revisionsData[0]['username'],
+                $revisionsData[0]['r.id'],
+                \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $revisionsData[0]['r.timestamp']),
+                $revisionsData[0]['r.user_id'],
+                $revisionsData[0]['u.username'],
+                $revisionsData[0]['u.first_name'],
+                $revisionsData[0]['u.last_name'],
                 $revisionsData[0]['project']
             );
         } else {
@@ -814,8 +822,10 @@ class AuditReader
             }
         }
 
-        $query = "SELECT r.* FROM " . $this->config->getRevisionTableName() . " r " .
-                 "INNER JOIN " . $tableName . " e ON r.id = e." . $this->config->getRevisionFieldName() . " WHERE " . $whereSQL . " ORDER BY r.id DESC";
+        $query = "SELECT r.*, u.first_name, u.last_name, u.username FROM " . $this->config->getRevisionTableName() . " r " .
+                 "INNER JOIN " . $tableName . " e ON r.id = e." . $this->config->getRevisionFieldName() .
+            ' LEFT JOIN user u ON r.user_id = u.id';
+            " WHERE " . $whereSQL . " ORDER BY r.id DESC";
         $revisionsData = $this->em->getConnection()->fetchAll($query, array_values($id));
 
         //echo $query;die;
@@ -824,7 +834,10 @@ class AuditReader
             $revisions[] = new Revision(
                 $row['id'],
                 \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $row['timestamp']),
-                $row['username'],
+                $row['r.user_id'],
+                $row['u.username'],
+                $row['u.first_name'],
+                $row['u.last_name'],
                 $row['project']
             );
         }
@@ -998,8 +1011,9 @@ class AuditReader
             $values[] = $minRev;
         }
 
-        $query = "SELECT " . implode(', ', $columnList) . " FROM " . $tableName .' e'
+        $query = "SELECT " . implode(', ', $columnList) .', r.timestamp , r.user_id, u.first_name, u.last_name, u.username'. " FROM " . $tableName .' e'
         . ' LEFT JOIN '.$this->config->getRevisionTableName(). ' r ON e.'.$this->config->getRevisionFieldName().'=r.id'
+        . ' LEFT JOIN user u ON r.user_id = u.id'
         . " WHERE " . $whereSQL . " ORDER BY e.".$this->config->getRevisionFieldName()." DESC";
 
 
@@ -1018,8 +1032,20 @@ class AuditReader
         while ($row = $stmt->fetch(Query::HYDRATE_ARRAY)) {
             $rev = $row[$this->config->getRevisionFieldName()];
             unset($row[$this->config->getRevisionFieldName()]);
+
+            //dump($row);die;
+            $user_id = $row['user_id'];
             $username = $row['username'];
+            $first_name = $row['first_name'];
+            $last_name = $row['last_name'];
+            unset($row['user_id']);
             unset($row['username']);
+            unset($row['first_name']);
+            unset($row['last_name']);
+
+            $timestamp = $row['timestamp'];
+            unset($row['timestamp']);
+
             $revType = $row[$this->config->getRevisionTypeFieldName()];
             unset($row[$this->config->getRevisionTypeFieldName()]);
 
@@ -1030,11 +1056,13 @@ class AuditReader
                 $id,
                 $revType,
                 $entity,
-                $rev,
-                $username
+                $rev, $timestamp,
+                $user_id, $username, $first_name, $last_name
+
             );
         }
 
+        //dump($result);die;
         return $result;
     }
 
@@ -1042,12 +1070,12 @@ class AuditReader
         $res = $this->getEntityHistory($className, $id, $minRev);
         $result = array();
         foreach($res as $changedEntity) {
-            $username = $changedEntity->getUsername();
-            if(isset($result[$username])) {
+            $userId = $changedEntity->getUserId();
+            if(isset($result[$userId])) {
                 continue;
             }
             else {
-                $result[$username] = $changedEntity;
+                $result[$userId] = $changedEntity;
             }
         }
         return $result;
