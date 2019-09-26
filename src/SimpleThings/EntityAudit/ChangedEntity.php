@@ -72,8 +72,7 @@ class ChangedEntity
     }
 
     /**
-     *
-     * @return array
+     * @return \DateTime
      */
     public function getTimestamp()
     {

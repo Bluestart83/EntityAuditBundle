@@ -560,12 +560,12 @@ class AuditReader
         $revisions = array();
         foreach ($revisionsData AS $row) {
             $revisions[] = new Revision(
-                $row['r.id'],
-                \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $row['r.timestamp']),
-                $row['r.user_id'],
-                $row['u.username'],
-                $row['u.first_name'],
-                $row['u.last_name'],
+                $row['id'],
+                \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $row['timestamp']),
+                $row['user_id'],
+                $row['username'],
+                $row['first_name'],
+                $row['last_name'],
                 $row['project']
             );
         }
@@ -772,12 +772,12 @@ class AuditReader
 
         if (count($revisionsData) == 1) {
             return new Revision(
-                $revisionsData[0]['r.id'],
-                \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $revisionsData[0]['r.timestamp']),
-                $revisionsData[0]['r.user_id'],
-                $revisionsData[0]['u.username'],
-                $revisionsData[0]['u.first_name'],
-                $revisionsData[0]['u.last_name'],
+                $revisionsData[0]['id'],
+                \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $revisionsData[0]['timestamp']),
+                $revisionsData[0]['user_id'],
+                $revisionsData[0]['username'],
+                $revisionsData[0]['first_name'],
+                $revisionsData[0]['last_name'],
                 $revisionsData[0]['project']
             );
         } else {
@@ -834,10 +834,10 @@ class AuditReader
             $revisions[] = new Revision(
                 $row['id'],
                 \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $row['timestamp']),
-                $row['r.user_id'],
-                $row['u.username'],
-                $row['u.first_name'],
-                $row['u.last_name'],
+                $row['user_id'],
+                $row['username'],
+                $row['first_name'],
+                $row['last_name'],
                 $row['project']
             );
         }
@@ -1011,7 +1011,9 @@ class AuditReader
             $values[] = $minRev;
         }
 
-        $query = "SELECT " . implode(', ', $columnList) .', r.timestamp , r.user_id, u.first_name, u.last_name, u.username'. " FROM " . $tableName .' e'
+        $query = "SELECT " . implode(', ', $columnList)
+            .", r.timestamp AS 'r.timestamp' , r.user_id AS 'r.user_id', u.first_name AS 'u.first_name', u.last_name AS 'u.last_name', u.username AS 'u.username'"
+            . " FROM " . $tableName .' e'
         . ' LEFT JOIN '.$this->config->getRevisionTableName(). ' r ON e.'.$this->config->getRevisionFieldName().'=r.id'
         . ' LEFT JOIN user u ON r.user_id = u.id'
         . " WHERE " . $whereSQL . " ORDER BY e.".$this->config->getRevisionFieldName()." DESC";
@@ -1034,17 +1036,18 @@ class AuditReader
             unset($row[$this->config->getRevisionFieldName()]);
 
             //dump($row);die;
-            $user_id = $row['user_id'];
-            $username = $row['username'];
-            $first_name = $row['first_name'];
-            $last_name = $row['last_name'];
-            unset($row['user_id']);
-            unset($row['username']);
-            unset($row['first_name']);
-            unset($row['last_name']);
+            $user_id = $row['r.user_id'];
+            $username = $row['u.username'];
+            $first_name = $row['u.first_name'];
+            $last_name = $row['u.last_name'];
+            unset($row['r.user_id']);
+            unset($row['u.username']);
+            unset($row['u.first_name']);
+            unset($row['u.last_name']);
 
-            $timestamp = $row['timestamp'];
-            unset($row['timestamp']);
+            $timestamp = $row['r.timestamp'];
+            unset($row['r.timestamp']);
+            $date = \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $timestamp);
 
             $revType = $row[$this->config->getRevisionTypeFieldName()];
             unset($row[$this->config->getRevisionTypeFieldName()]);
@@ -1056,7 +1059,7 @@ class AuditReader
                 $id,
                 $revType,
                 $entity,
-                $rev, $timestamp,
+                $rev, $date,
                 $user_id, $username, $first_name, $last_name
 
             );
