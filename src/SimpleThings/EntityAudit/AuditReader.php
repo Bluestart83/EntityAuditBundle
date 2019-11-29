@@ -277,8 +277,8 @@ class AuditReader
 
             foreach ($assoc['joinColumnFieldNames'] as $sourceCol) {
                 $tableAlias = $class->isInheritanceTypeJoined() &&
-                    $class->isInheritedAssociation($assoc['fieldName']) &&
-                    !$class->isIdentifier($assoc['fieldName'])
+                $class->isInheritedAssociation($assoc['fieldName']) &&
+                !$class->isIdentifier($assoc['fieldName'])
                     ? 're' // root entity
                     : 'e';
                 $columnList[] = $tableAlias.'.'.$sourceCol;
@@ -578,10 +578,10 @@ class AuditReader
      * @param $validated Si vrai, on ne recherche que les éléments non déja validé manuellement
      * @param $project Project Id
      */
-    public function findEntityChangesSinceRevision($className, $project, $revision, $validated = true, $filterDeleted = true, $filterCreated=true) {
+    public function findEntityChangesSinceRevision($className, $project, $revision, $validated = true, $filterDeleted = true, $filterCreated=true, $toRevision=null) {
         /** @var ClassMetadataInfo|ClassMetadata $class */
         $class = $this->em->getClassMetadata($className);
-        
+
         if ($class->isInheritanceTypeSingleTable() && count($class->subClasses) > 0) {
             return array();
         }
@@ -591,6 +591,10 @@ class AuditReader
 
         $whereSQL   = 'e.' . $this->config->getRevisionFieldName() .' > ?';
         $params[] = $revision;
+        if($toRevision) {
+            $whereSQL   .=' AND e.' . $this->config->getRevisionFieldName() .' <= ?';
+            $params[] = $toRevision;
+        }
         $whereSQL   .= ' AND e.project_id = ?';
         $columnList = 'e.' . $this->config->getRevisionTypeFieldName();
         $params[] = $project;
@@ -615,7 +619,7 @@ class AuditReader
                 }
             }
         }
-        
+
         $joinSql = '';
         if ($class->isInheritanceTypeSingleTable()) {
             $columnList .= ', e.' . $class->discriminatorColumn['name'];
@@ -640,9 +644,9 @@ class AuditReader
         }
 
         $idKey = $class->identifier[0];
-        $query = "SELECT " . $columnList . " FROM " . $tableName . " e " . $joinSql 
-        . ' LEFT JOIN '.$tableName.' e2 ON e2.'.$idKey.'=e.'.$idKey.' AND e2.'.$this->config->getRevisionFieldName().' > e.'.$this->config->getRevisionFieldName()
-        . ' WHERE ' . $whereSQL. ' AND e2.'.$idKey.' IS NULL';
+        $query = "SELECT " . $columnList . " FROM " . $tableName . " e " . $joinSql
+            . ' LEFT JOIN '.$tableName.' e2 ON e2.'.$idKey.'=e.'.$idKey.' AND e2.'.$this->config->getRevisionFieldName().' > e.'.$this->config->getRevisionFieldName()
+            . ' WHERE ' . $whereSQL. ' AND e2.'.$idKey.' IS NULL';
 
         if($filterDeleted) {
             $query .= ' AND e.revtype <> \''.Revision::TYPE_DELETE.'\''; // Filter DELETED
@@ -652,7 +656,7 @@ class AuditReader
         }
         $query .= ' GROUP BY e.'.$idKey;
 
-       // echo $query; die;
+        // echo $query; die;
         $revisionsData = $this->em->getConnection()->executeQuery($query, $params);
 
         $changedEntities = array();
@@ -823,9 +827,9 @@ class AuditReader
         }
 
         $query = "SELECT r.*, u.first_name, u.last_name, u.username FROM " . $this->config->getRevisionTableName() . " r " .
-                 "INNER JOIN " . $tableName . " e ON r.id = e." . $this->config->getRevisionFieldName() .
+            "INNER JOIN " . $tableName . " e ON r.id = e." . $this->config->getRevisionFieldName() .
             ' LEFT JOIN user u ON r.user_id = u.id';
-            " WHERE " . $whereSQL . " ORDER BY r.id DESC";
+        " WHERE " . $whereSQL . " ORDER BY r.id DESC";
         $revisionsData = $this->em->getConnection()->fetchAll($query, array_values($id));
 
         //echo $query;die;
@@ -883,7 +887,7 @@ class AuditReader
         }
 
         $query = "SELECT e.".$this->config->getRevisionFieldName()." FROM " . $tableName . " e " .
-                        " WHERE " . $whereSQL . " ORDER BY e.".$this->config->getRevisionFieldName()." DESC";
+            " WHERE " . $whereSQL . " ORDER BY e.".$this->config->getRevisionFieldName()." DESC";
         $revision = $this->em->getConnection()->fetchColumn($query, array_values($id));
 
         return $revision;
@@ -939,7 +943,7 @@ class AuditReader
         // External mapping
         foreach ($fieldsExternal AS $fieldName => $data) {
             $value = $metadata->getFieldValue($entity, $fieldName);
-            
+
             $label = '(DELETED)';
             try { // Manage deleted case
                 $label = $value->__toString();
@@ -979,7 +983,7 @@ class AuditReader
 
             $whereId[] = "e.{$columnName} = ?";
         }
-        
+
         $whereSQL  = implode(' AND ', $whereId);
         $columnList = array($this->config->getRevisionFieldName(), $this->config->getRevisionTypeFieldName(), 'r.username');
         $columnMap  = array();
@@ -1014,22 +1018,22 @@ class AuditReader
         $query = "SELECT " . implode(', ', $columnList)
             .", r.timestamp AS 'r.timestamp' , r.user_id AS 'r.user_id', u.first_name AS 'u.first_name', u.last_name AS 'u.last_name', u.username AS 'u.username'"
             . " FROM " . $tableName .' e'
-        . ' LEFT JOIN '.$this->config->getRevisionTableName(). ' r ON e.'.$this->config->getRevisionFieldName().'=r.id'
-        . ' LEFT JOIN user u ON r.user_id = u.id'
-        . " WHERE " . $whereSQL . " ORDER BY e.".$this->config->getRevisionFieldName()." DESC";
+            . ' LEFT JOIN '.$this->config->getRevisionTableName(). ' r ON e.'.$this->config->getRevisionFieldName().'=r.id'
+            . ' LEFT JOIN user u ON r.user_id = u.id'
+            . " WHERE " . $whereSQL . " ORDER BY e.".$this->config->getRevisionFieldName()." DESC";
 
 
-       /* $statement = $this->em->getConnection()->prepare($query);
-        if($project) {
-            $statement->bindValue('project', $project);
-        }
-        $statement->execute();*/
+        /* $statement = $this->em->getConnection()->prepare($query);
+         if($project) {
+             $statement->bindValue('project', $project);
+         }
+         $statement->execute();*/
         //echo $query; die;
         $stmt = $this->em->getConnection()->executeQuery($query, $values);
 
-        
 
-        
+
+
         $result = array();
         while ($row = $stmt->fetch(Query::HYDRATE_ARRAY)) {
             $rev = $row[$this->config->getRevisionFieldName()];
@@ -1118,7 +1122,7 @@ class AuditReader
         $query = 'UPDATE ' . $tableName . ' SET validated = true WHERE '. $whereSQL;
         $stmt = $this->em->getConnection()->executeUpdate($query, $values);
 
-        
+
     }
-    
+
 }
