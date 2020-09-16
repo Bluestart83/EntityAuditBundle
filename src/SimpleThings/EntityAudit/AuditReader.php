@@ -1011,7 +1011,7 @@ class AuditReader
         $values = array_values($id);
 
         if($minRev !=null) {
-            $whereSQL .=' AND e.rev > ?';
+            $whereSQL .=' AND e.rev >= ?';
             $values[] = $minRev;
         }
 
