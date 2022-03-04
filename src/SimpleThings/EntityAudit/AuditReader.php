@@ -578,7 +578,8 @@ class AuditReader
      * @param $validated Si vrai, on ne recherche que les éléments non déja validé manuellement
      * @param $project Project Id
      */
-    public function findEntityChangesSinceRevision($className, $project, $revision, $validated = true, $filterDeleted = true, $filterCreated=true, $toRevision=null) {
+    public function findEntityChangesSinceRevision($className, $project, $revision, $validated = true,
+                                                   $filterDeleted = true, $filterCreated=true, $toRevision=null) {
         /** @var ClassMetadataInfo|ClassMetadata $class */
         $class = $this->em->getClassMetadata($className);
 
@@ -959,6 +960,8 @@ class AuditReader
 
     public function getEntityHistory($className, $id, $minRev = null)
     {
+        //echo "$id";die;
+        //echo "$minRev";die;
         if (!$this->metadataFactory->isAudited($className)) {
             throw new NotAuditedException($className);
         }
@@ -1010,11 +1013,6 @@ class AuditReader
 
         $values = array_values($id);
 
-        if($minRev !=null) {
-            $whereSQL .=' AND e.rev >= ?';
-            $values[] = $minRev;
-        }
-
         $query = "SELECT " . implode(', ', $columnList)
             .", r.timestamp AS 'r.timestamp' , r.user_id AS 'r.user_id', u.first_name AS 'u.first_name', u.last_name AS 'u.last_name', u.username AS 'u.username'"
             . " FROM " . $tableName .' e'
@@ -1032,12 +1030,17 @@ class AuditReader
         $stmt = $this->em->getConnection()->executeQuery($query, $values);
 
 
-
-
         $result = array();
+        $curMinRev = null;
         while ($row = $stmt->fetch(Query::HYDRATE_ARRAY)) {
             $rev = $row[$this->config->getRevisionFieldName()];
             unset($row[$this->config->getRevisionFieldName()]);
+
+            // On retourne jusqu'à la dernière modification, même si c'est avant la révision du dernier tag pour pouvoir comparer
+            if($minRev != null && $curMinRev != null && $curMinRev <= $minRev) {
+                break;
+            }
+            $curMinRev = $rev;
 
             //dump($row);die;
             $user_id = $row['r.user_id'];
