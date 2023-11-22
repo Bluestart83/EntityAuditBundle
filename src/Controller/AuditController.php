@@ -20,7 +20,7 @@ use SimpleThings\EntityAudit\Action\ViewEntityAction;
 use SimpleThings\EntityAudit\Action\ViewRevisionAction;
 use SimpleThings\EntityAudit\AuditManager;
 use SimpleThings\EntityAudit\AuditReader;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -34,7 +34,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  *
  * NEXT_MAJOR: remove this controller
  */
-class AuditController extends Controller
+class AuditController extends AbstractController
 {
     /**
      * Renders a paginated list of revisions.
