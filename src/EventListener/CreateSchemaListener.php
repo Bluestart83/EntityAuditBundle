@@ -102,7 +102,11 @@ class CreateSchemaListener implements EventSubscriber
         // ///////////////// Added
         $revisionTable->addColumn('validated', 'boolean')->setNotnull(true)->setDefault(false);
         $revisionTable->addIndex(['validated'], 'validated_'.md5($revisionTable->getName()).'_idx');
-        $revisionTable->addIndex(['project_id'], 'project_id_'.md5($revisionTable->getName()).'_idx');
+
+        $projectId= $this->config->getProjectIdFieldName();
+        if ($entityTable->hasColumn( $projectId)) {
+            $revisionTable->addIndex([$projectId],  $projectId.'_'.md5($revisionTable->getName()).'_idx');
+        } 
 
         $primaryKey = $entityTable->getPrimaryKey();
         \assert($primaryKey !== null);

@@ -359,24 +359,24 @@ class AuditReader
         // );
         // $revisionsData = $this->em->getConnection()->fetchAllAssociative($query);
         // //////////////////////// ADDED
-        $queryStr = 'SELECT r.*, u.first_name, u.last_name, u.username FROM '.$this->config->getRevisionTableName().' r';
-        $queryStr .= ' LEFT JOIN user u ON r.user_id = u.id';
+        $queryBuilder = $this->em->getConnection()->createQueryBuilder();
+        $queryBuilder
+            ->select('r.*', 'u.first_name', 'u.last_name', 'u.username')
+            ->from($this->config->getRevisionTableName(), 'r')
+            ->leftJoin('r', 'user', 'u', 'r.user_id = u.id')
+            ->orderBy('r.id', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset);
+        
+        $projectField= $this->config->getProjectFieldName();
         if ($project) {
-            $queryStr .= ' WHERE project = :project';
+            $queryBuilder
+                ->where('r.'. $projectField.' = :project')
+                ->setParameter( $projectField, $project);
         }
-        $queryStr .= ' ORDER BY id DESC';
-        $queryStr = $this->platform->modifyLimitQuery(
-            $queryStr,
-            $limit,
-            $offset
-        );
+        
+        $revisionsData = $queryBuilder->executeQuery()->fetchAllAssociative();
 
-        $statement = $this->em->getConnection()->prepare($queryStr);
-        if ($project) {
-            $statement->bindValue('project', $project);
-        }
-        $statement->execute();
-        $revisionsData = $statement->fetchAllAssociative();
         // /////////////////////////////
 
         $revisions = [];
@@ -391,7 +391,7 @@ class AuditReader
                 $row['user_id'],
                 $row['first_name'],
                 $row['last_name'],
-                $row['project']
+                $row[ $projectField]
             ); // ADDED
         }
 
@@ -410,7 +410,7 @@ class AuditReader
      */
     public function findEntityChangesSinceRevision(
         string $className,
-        $project,
+        mixed $project,
         int $revision,
         bool $validated = true,
         bool $filterDeleted = true,
@@ -419,6 +419,8 @@ class AuditReader
     ) {
         /** @var ClassMetadataInfo|ClassMetadata $class */
         $class = $this->em->getClassMetadata($className);
+
+        
 
         if ($class->isInheritanceTypeSingleTable() && \count($class->subClasses) > 0) {
             return [];
@@ -433,9 +435,13 @@ class AuditReader
             $whereSQL .= ' AND e.'.$this->config->getRevisionFieldName().' <= ?';
             $params[] = $toRevision;
         }
-        $whereSQL .= ' AND e.project_id = ?';
+        $projectId= $this->config->getProjectIdFieldName();
+        if ($project != null && $class->hasField( $projectId)) {
+            $whereSQL .= ' AND e.'.$projectId.' = ?';
+            $params[] = $project;
+        } 
+        
         $columnList = 'e.'.$this->config->getRevisionTypeFieldName();
-        $params[] = $project;
         $columnMap = [];
 
         foreach ($class->fieldNames as $columnName => $field) {
@@ -443,18 +449,16 @@ class AuditReader
             $tableAlias = $class->isInheritanceTypeJoined() && $class->isInheritedField($field) && !$class->isIdentifier($field)
                 ? 're' // root entity
                 : 'e';
-            $columnList .= ', '.$type->convertToPHPValueSQL(
-                $tableAlias.'.'.$this->quoteStrategy->getColumnName($field, $class, $this->platform),
-                $this->platform
-            ).' AS '.$this->platform->quoteSingleIdentifier($field);
-            $columnMap[$field] = $this->platform->getSQLResultCasing($columnName);
+            $quotedColumnName = $this->quoteStrategy->getColumnName($field, $class, $this->platform);
+            $columnList .= ', '.$type->convertToPHPValueSQL($tableAlias.'.'.$quotedColumnName, $this->platform).' AS '.$this->platform->quoteSingleIdentifier($field);
+            $columnMap[$field] = $field; // Directly use the field name
         }
 
         foreach ($class->associationMappings as $assoc) {
             if (($assoc['type'] & ClassMetadata::TO_ONE) > 0 && $assoc['isOwningSide']) {
                 foreach ($assoc['targetToSourceKeyColumns'] as $sourceCol) {
                     $columnList .= ', e.'.$sourceCol;
-                    $columnMap[$sourceCol] = $this->platform->getSQLResultCasing($sourceCol);
+                    $columnMap[$sourceCol] = $sourceCol;
                 }
             }
         }
@@ -496,7 +500,7 @@ class AuditReader
         $query .= ' GROUP BY e.'.$idKey;
 
         // echo $query; die;
-        $revisionsData = $this->em->getConnection()->executeQuery($query, $params);
+        $revisionsData = $this->em->getConnection()->executeQuery($query, $params)->fetchAllAssociative();
 
         $changedEntities = [];
         foreach ($revisionsData as $row) {
@@ -651,6 +655,7 @@ class AuditReader
     {
         $query = 'SELECT * FROM '.$this->config->getRevisionTableName().' r WHERE r.id = ?';
         $revisionsData = $this->em->getConnection()->fetchAllAssociative($query, [$revision]);
+        $projectField= $this->config->getProjectFieldName();
 
         if (\count($revisionsData) === 1) {
             $timestamp = \DateTime::createFromFormat(
@@ -666,7 +671,7 @@ class AuditReader
                 $revisionsData[0]['user_id'],
                 $revisionsData[0]['first_name'],
                 $revisionsData[0]['last_name'],
-                $revisionsData[0]['project']
+                $revisionsData[0][$projectField]
             );
         }
         throw new InvalidRevisionException($revision);
@@ -722,6 +727,7 @@ class AuditReader
         );
         $revisionsData = $this->em->getConnection()->fetchAllAssociative($query, array_values($id));
 
+        $projectField= $this->config->getProjectFieldName();
         $revisions = [];
         foreach ($revisionsData as $row) {
             $timestamp = \DateTime::createFromFormat($this->platform->getDateTimeFormatString(), $row['timestamp']);
@@ -734,7 +740,7 @@ class AuditReader
                 $row['user_id'],
                 $row['first_name'],
                 $row['last_name'],
-                $row['project']
+                $row[$projectField]
             );
         }
 
@@ -984,10 +990,10 @@ class AuditReader
             $revType = $row[$this->config->getRevisionTypeFieldName()];
             unset($row[$this->config->getRevisionTypeFieldName()]);
 
-            $entity = $this->createEntity($class->name, $columnMap, $row, $rev);
+            $entity = $this->createEntity($classMetadata->name, $columnMap, $row, $rev);
 
             $result[] = new ChangedEntity(
-                $class->name,
+                $classMetadata->name,
                 $id,
                 $revType,
                 $entity,

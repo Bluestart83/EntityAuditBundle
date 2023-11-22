@@ -147,6 +147,23 @@ class AuditConfiguration
         return $this->revisionTypeFieldName;
     }
 
+    ///ALI
+    /**
+     * @return string
+     */
+    public function getProjectIdFieldName()
+    {
+        return 'site_id';
+    }
+
+    /**
+     * @return string
+     */
+    public function getProjectFieldName()
+    {
+        return 'site';
+    }
+
     /**
      * @param string $revisionTypeFieldName
      */
