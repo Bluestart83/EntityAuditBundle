@@ -387,7 +387,6 @@ class AuditReader
             $revisions[] = new Revision(
                 $row['id'],
                 $timestamp,
-                $row['username'],
                 $row['user_id'],
                 $row['first_name'],
                 $row['last_name'],
@@ -667,7 +666,6 @@ class AuditReader
             return new Revision(
                 $revisionsData[0]['id'],
                 $timestamp,
-                $revisionsData[0]['username'],
                 $revisionsData[0]['user_id'],
                 $revisionsData[0]['first_name'],
                 $revisionsData[0]['last_name'],
@@ -736,7 +734,6 @@ class AuditReader
             $revisions[] = new Revision(
                 $row['id'],
                 $timestamp,
-                $row['username'],
                 $row['user_id'],
                 $row['first_name'],
                 $row['last_name'],

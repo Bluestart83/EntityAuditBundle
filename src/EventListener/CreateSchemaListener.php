@@ -107,7 +107,8 @@ class CreateSchemaListener implements EventSubscriber
         if ($entityTable->hasColumn( $projectId)) {
             $revisionTable->addIndex([$projectId],  $projectId.'_'.md5($revisionTable->getName()).'_idx');
         } 
-
+		/////////////////////////////
+		
         $primaryKey = $entityTable->getPrimaryKey();
         \assert($primaryKey !== null);
         $pkColumns = $primaryKey->getColumns();
@@ -185,6 +186,9 @@ class CreateSchemaListener implements EventSubscriber
         $targetColumn->setAutoincrement(false);
     }
 
+    /**
+     * Table that list main revisions numbers
+     */
     private function createRevisionsTable(Schema $schema): Table
     {
         $revisionsTableName = $this->config->getRevisionTableName();
@@ -198,13 +202,14 @@ class CreateSchemaListener implements EventSubscriber
             'autoincrement' => true,
         ]);
         $revisionsTable->addColumn('timestamp', Types::DATETIME_MUTABLE);
-        $revisionsTable->addColumn('username', Types::STRING)->setNotnull(false);
+        //$revisionsTable->addColumn('username', Types::STRING)->setNotnull(false);
         $revisionsTable->setPrimaryKey(['id']);
 
         // ///////////////// Added
-        $revisionsTable->addColumn('user_id', 'string')->setNotnull(false);
-        $revisionsTable->addColumn('project', 'integer');
-        $revisionsTable->addIndex(['project'], 'project_'.md5($revisionsTable->getName()).'_idx');
+        $revisionsTable->addColumn('user_id', 'integer')->setNotnull(false);
+        $projectField = $this->config->getProjectFieldName();
+        $revisionsTable->addColumn( $projectField, 'integer')->setNotnull(false);
+        $revisionsTable->addIndex([ $projectField],  $projectField.'_'.md5($revisionsTable->getName()).'_idx');
 
         // /////////////////
         return $revisionsTable;

@@ -13,27 +13,28 @@ declare(strict_types=1);
 
 namespace SimpleThings\EntityAudit\EventListener;
 
-use Doctrine\Common\EventSubscriber;
-use Doctrine\DBAL\Connection;
+use Doctrine\ORM\Events;
 use Doctrine\DBAL\Exception;
+use Doctrine\ORM\UnitOfWork;
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Type;
+use Psr\Clock\ClockInterface;
 use Doctrine\DBAL\Types\Types;
+use Doctrine\Common\EventSubscriber;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\OnFlushEventArgs;
-use Doctrine\ORM\Event\PostFlushEventArgs;
-use Doctrine\ORM\Event\PostPersistEventArgs;
-use Doctrine\ORM\Event\PostUpdateEventArgs;
-use Doctrine\ORM\Events;
-use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Persisters\Entity\EntityPersister;
-use Doctrine\ORM\UnitOfWork;
 use Doctrine\ORM\Utility\PersisterHelper;
-use Doctrine\Persistence\Mapping\MappingException;
-use Psr\Clock\ClockInterface;
-use SimpleThings\EntityAudit\AuditConfiguration;
+use Doctrine\ORM\Event\PostFlushEventArgs;
 use SimpleThings\EntityAudit\AuditManager;
-use SimpleThings\EntityAudit\DeferredChangedManyToManyEntityRevisionToPersist;
+use Doctrine\ORM\Event\PostUpdateEventArgs;
+use Doctrine\ORM\Event\PostPersistEventArgs;
+use SimpleThings\EntityAudit\AuditConfiguration;
+use Doctrine\Persistence\Mapping\MappingException;
+use Doctrine\ORM\Persisters\Entity\EntityPersister;
+use Symfony\Component\PropertyAccess\PropertyAccess;
 use SimpleThings\EntityAudit\Metadata\MetadataFactory;
+use SimpleThings\EntityAudit\DeferredChangedManyToManyEntityRevisionToPersist;
 
 /**
  * NEXT_MAJOR: do not implement EventSubscriber interface anymore.
@@ -132,7 +133,7 @@ class LogRevisionsListener implements EventSubscriber
                     'SET '.$field.' = '.$placeholder.' '.
                     'WHERE '.$this->config->getRevisionFieldName().' = ? ';
 
-                $params = [$value, $this->getRevisionId($conn)];
+                $params = [$value, $this->getRevisionId($conn, $entity)];
 
                 $types = [];
 
@@ -216,7 +217,7 @@ class LogRevisionsListener implements EventSubscriber
             $this->getOriginalEntityData($em, $entity),
             $this->getManyToManyRelations($em, $entity)
         );
-        $this->saveRevisionEntityData($em, $class, $entityData, 'INS');
+        $this->saveRevisionEntityData($em, $class, $entityData, 'INS', $entity);
     }
 
     public function postUpdate(PostUpdateEventArgs $eventArgs): void
@@ -251,7 +252,7 @@ class LogRevisionsListener implements EventSubscriber
             $this->getManyToManyRelations($em, $entity)
         );
 
-        $this->saveRevisionEntityData($em, $class, $entityData, 'UPD');
+        $this->saveRevisionEntityData($em, $class, $entityData, 'UPD', $entity);
     }
 
     public function onClear(): void
@@ -287,7 +288,7 @@ class LogRevisionsListener implements EventSubscriber
                 $uow->getEntityIdentifier($entity),
                 $this->getManyToManyRelations($em, $entity)
             );
-            $this->saveRevisionEntityData($em, $class, $entityData, 'DEL');
+            $this->saveRevisionEntityData($em, $class, $entityData, 'DEL', $entity);
         }
 
         foreach ($uow->getScheduledEntityInsertions() as $entity) {
@@ -350,20 +351,42 @@ class LogRevisionsListener implements EventSubscriber
     /**
      * @return string|int
      */
-    private function getRevisionId(Connection $conn)
+    private function getRevisionId(Connection $conn, object $entity)
     {
         $now = $this->clock instanceof ClockInterface ? $this->clock->now() : new \DateTimeImmutable();
 
+        //$projectId = $entity->getProject()->getId();
+        $projectId = null;
+        $fieldName = $this->config->getProjectFieldName();
+        $propertyAccessor = PropertyAccess::createPropertyAccessor();
+
+        if($entity instanceof \App\Entity\Site) {
+            if ($propertyAccessor->isReadable($entity, 'id')) {
+                $projectId = $propertyAccessor->getValue($entity, 'id');
+            } 
+        }
+        else {
+            if ($propertyAccessor->isReadable($entity, $fieldName)) {
+                $project = $propertyAccessor->getValue($entity, $fieldName);
+                if($propertyAccessor->isReadable($project, 'id')) {
+                    $projectId = $propertyAccessor->getValue($project, 'id');
+                }
+            } 
+        }
+
         if ($this->revisionId === null) {
+            $projectField = $this->config->getProjectFieldName();
             $conn->insert(
                 $this->config->getRevisionTableName(),
                 [
                     'timestamp' => $now,
-                    'username' => $this->config->getCurrentUsername(),
+                    'user_id' => $this->config->getCurrentUsername(),
+                    $projectField => $projectId
                 ],
                 [
                     Types::DATETIME_IMMUTABLE,
                     Types::STRING,
+                    Types::INTEGER,
                 ]
             );
 
@@ -495,12 +518,12 @@ class LogRevisionsListener implements EventSubscriber
      * @param ClassMetadata<object> $class
      * @param array<string, mixed>  $entityData
      */
-    private function saveRevisionEntityData(EntityManagerInterface $em, ClassMetadata $class, array $entityData, string $revType): void
+    private function saveRevisionEntityData(EntityManagerInterface $em, ClassMetadata $class, array $entityData, string $revType, object $entity): void
     {
         $uow = $em->getUnitOfWork();
         $conn = $em->getConnection();
 
-        $params = [$this->getRevisionId($conn), $revType];
+        $params = [$this->getRevisionId($conn, $entity), $revType];
         $types = [\PDO::PARAM_INT, \PDO::PARAM_STR];
 
         $fields = [];
@@ -594,7 +617,8 @@ class LogRevisionsListener implements EventSubscriber
                 $em,
                 $em->getClassMetadata($class->rootEntityName),
                 $entityData,
-                $revType
+                $revType,
+                $entity
             );
         }
 

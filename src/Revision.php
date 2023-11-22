@@ -24,7 +24,7 @@ class Revision
 
     private bool $validated = false;
 
-    public function __construct(private $rev, private \DateTime $timestamp, private ?string $user_username, private $user_id, private ?string $user_firstName, private ?string $user_lastName, private $project)
+    public function __construct(private $rev, private \DateTime $timestamp, private $user_id, private ?string $user_firstName, private ?string $user_lastName, private $project)
     {
     }
 

@@ -62,7 +62,8 @@ class TokenStorageUsernameCallable
         $token = $this->tokenStorage->getToken();
 
         if ($token !== null && $token->getUser() !== null) {
-            return $token->getUserIdentifier();
+            //return $token->getUserIdentifier();
+            return ($token->getUser() != null) && ($token->getUser() instanceof \App\Entity\User) ? $token->getUser()->getId() : null;
         }
 
         return null;
