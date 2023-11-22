@@ -1,5 +1,6 @@
 {
     "name": "sonata-project/entity-audit-bundle",
+    "version": "1.17",
     "description": "Audit for Doctrine Entities",
     "license": "MIT",
     "type": "symfony-bundle",
