@@ -32,28 +32,15 @@ class Revision
     public const TYPE_UPDATE = 'UPD'; 
     public const TYPE_DELETE = 'DEL'; 
 
-    private $rev;
-    private $timestamp;
+    private bool $validated = false ;
 
-    private $user_id;
-    private $user_username;
-    private $user_firstName;
-    private $user_lastName;
-
-    private $project;
-    private $validated;
-
-    function __construct($rev, $timestamp, $user_id, $user_username, $user_firstName, $user_lastName, $project)
+    function __construct(private $rev, private \DateTime $timestamp, private ?string $user_username, private $user_id, private ?string $user_firstName, private ?string $user_lastName, private $project)
     {
-        $this->rev = $rev;
-        $this->timestamp = $timestamp;
-        $this->user_id = $user_id;
-        $this->user_username = $user_username;
-        $this->user_firstName = $user_firstName;
-        $this->user_lastName = $user_lastName;
-        $this->project = $project;
     }
 
+    /**
+     * @return int|string
+     */
     public function getRev()
     {
         return $this->rev;
@@ -72,21 +59,30 @@ class Revision
         return $this->user_id;
     }
 
+    /**
+     * @return string|null
+     */
     public function getUserFirstname()
     {
         return $this->user_firstName;
     }
 
+    /**
+     * @return string|null
+     */
     public function getUserLastName()
     {
         return $this->user_lastName;
     }
 
-    public function getUserUsername()
+    public function getUsername()
     {
         return $this->user_username;
     }
 
+    /**
+     * @return bool
+     */
     public function isValidated()
     {
         return $this->validated;

@@ -1,61 +1,37 @@
 <?php
+
+declare(strict_types=1);
+
 /*
- * (c) 2011 SimpleThings GmbH
+ * This file is part of the Sonata Project package.
  *
- * @package SimpleThings\EntityAudit
- * @author Benjamin Eberlei <eberlei@simplethings.de>
- * @link http://www.simplethings.de
+ * (c) Thomas Rabaix <thomas.rabaix@sonata-project.org>
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace SimpleThings\EntityAudit;
 
+/**
+ * @phpstan-template T of object
+ */
 class ChangedEntity
 {
-    private $className;
-    private $id;
-    private $revType;
-    private $entity;
-    private $rev;
 
-    private $user_id;
-    private $user_username;
-    private $user_firstName;
-    private $user_lastName;
-
-    private $timestamp;
-    
-    public function __construct($className, array $id, $revType, $entity, $rev = null, $timestamp = null,
-                                $user_id=null, $user_username=null, $user_firstName=null, $user_lastName=null)
-    {
-        $this->className = $className;
-        $this->id = $id;
-        $this->revType = $revType;
-        $this->entity = $entity;
-        $this->rev = $rev;
-        $this->timestamp = $timestamp;
-
-        $this->user_id = $user_id;
-        $this->user_username = $user_username;
-        $this->user_firstName = $user_firstName;
-        $this->user_lastName = $user_lastName;
-    }
-    
     /**
-     * @return string
+     * @param array<string, int|string> $id
+     *
+     * @phpstan-param class-string<T> $className
+     * @phpstan-param T $entity
+     */
+    public function __construct(private string $className, private array $id, private string $revType, private object $entity, private ?int $rev = null, private ?\DateTime $timestamp = null,
+                                private $user_id=null, private ?string $user_username=null, private ?string $user_firstName=null, private ?string $user_lastName=null)
+    {
+    }
+
+    /**
+     * @phpstan-return class-string<T>
      */
     public function getClassName()
     {
@@ -63,8 +39,7 @@ class ChangedEntity
     }
 
     /**
-     *
-     * @return string
+     * @return array<string, int|string>
      */
     public function getId()
     {
@@ -89,6 +64,8 @@ class ChangedEntity
 
     /**
      * @return object
+     *
+     * @phpstan-return T
      */
     public function getEntity()
     {
