@@ -47,7 +47,7 @@ class SimpleThingsEntityAuditExtension extends Extension
         }
 
         foreach ($config['service'] as $key => $service) {
-            if (null !== $service) {
+            if ($service !== null) {
                 $container->setAlias('simplethings_entityaudit.'.$key, $service);
             }
         }

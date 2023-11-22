@@ -407,7 +407,7 @@ class AuditedCollection implements Collection
     {
         if ($this->loadedEntities->offsetExists($offset)) {
             $entity = $this->loadedEntities->offsetGet($offset);
-            \assert(null !== $entity);
+            \assert($entity !== null);
 
             return $entity;
         }
@@ -419,7 +419,7 @@ class AuditedCollection implements Collection
         }
 
         $entity = $this->entities->offsetGet($offset);
-        \assert(null !== $entity);
+        \assert($entity !== null);
         $resolvedEntity = $this->resolve($entity);
         $this->loadedEntities->offsetSet($offset, $resolvedEntity);
 
@@ -485,7 +485,7 @@ class AuditedCollection implements Collection
             $this->revision
         );
 
-        if (null === $object) {
+        if ($object === null) {
             throw new AuditedCollectionException('Cannot resolve the entity.');
         }
 

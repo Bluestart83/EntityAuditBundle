@@ -32,7 +32,7 @@ final class ViewDetailAction
     public function __invoke(string $className, string $id, int $rev): Response
     {
         $entity = $this->auditReader->find($className, $id, $rev);
-        if (null === $entity) {
+        if ($entity === null) {
             throw new NotFoundHttpException('No revision was found.');
         }
 

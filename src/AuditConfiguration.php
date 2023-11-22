@@ -74,7 +74,7 @@ class AuditConfiguration
     {
         $tableName = $metadata->getTableName();
 
-        if (null !== $metadata->getSchemaName()) {
+        if ($metadata->getSchemaName() !== null) {
             $tableName = $metadata->getSchemaName().'.'.$tableName;
         }
 
@@ -222,7 +222,7 @@ class AuditConfiguration
     {
         $callable = $this->usernameCallable;
 
-        return null !== $callable ? (string) $callable() : '';
+        return $callable !== null ? (string) $callable() : '';
     }
 
     /**
@@ -231,7 +231,7 @@ class AuditConfiguration
     public function setUsernameCallable($usernameCallable): void
     {
         // php 5.3 compat
-        if (null !== $usernameCallable && !\is_callable($usernameCallable)) {
+        if ($usernameCallable !== null && !\is_callable($usernameCallable)) {
             throw new \InvalidArgumentException(sprintf('Username Callable must be callable. Got: %s', get_debug_type($usernameCallable)));
         }
 

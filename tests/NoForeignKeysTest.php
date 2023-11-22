@@ -65,7 +65,7 @@ final class NoForeignKeysTest extends BaseTest
 
     protected function getAuditManager(): AuditManager
     {
-        if (null !== $this->auditManager) {
+        if ($this->auditManager !== null) {
             return $this->auditManager;
         }
 

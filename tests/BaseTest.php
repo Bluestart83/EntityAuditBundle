@@ -79,7 +79,7 @@ abstract class BaseTest extends TestCase
 
     protected function getEntityManager(): EntityManager
     {
-        if (null !== $this->em) {
+        if ($this->em !== null) {
             return $this->em;
         }
 
@@ -110,7 +110,7 @@ abstract class BaseTest extends TestCase
 
     protected function getSchemaTool(): SchemaTool
     {
-        if (null !== $this->schemaTool) {
+        if ($this->schemaTool !== null) {
             return $this->schemaTool;
         }
 
@@ -123,7 +123,7 @@ abstract class BaseTest extends TestCase
     {
         if (!isset(self::$conn)) {
             $url = getenv('DATABASE_URL');
-            if (false !== $url) {
+            if ($url !== false) {
                 $params = ['url' => $url];
             } else {
                 $params = [
@@ -140,7 +140,7 @@ abstract class BaseTest extends TestCase
 
     protected function getAuditManager(): AuditManager
     {
-        if (null !== $this->auditManager) {
+        if ($this->auditManager !== null) {
             return $this->auditManager;
         }
 

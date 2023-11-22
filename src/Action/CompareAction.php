@@ -31,14 +31,14 @@ final class CompareAction
      */
     public function __invoke(Request $request, string $className, string $id, ?int $oldRev = null, ?int $newRev = null): Response
     {
-        if (null === $oldRev) {
+        if ($oldRev === null) {
             $oldRev = $request->query->get('oldRev');
-            \assert(null !== $oldRev);
+            \assert($oldRev !== null);
         }
 
-        if (null === $newRev) {
+        if ($newRev === null) {
             $newRev = $request->query->get('newRev');
-            \assert(null !== $newRev);
+            \assert($newRev !== null);
         }
 
         $diff = $this->auditReader->diff($className, $id, $oldRev, $newRev);

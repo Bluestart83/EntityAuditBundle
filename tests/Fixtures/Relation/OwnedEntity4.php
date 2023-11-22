@@ -74,7 +74,7 @@ class OwnedEntity4
 
     public function addOwner(OwnerEntity $owner): void
     {
-        if (false === $this->owners->contains($owner)) {
+        if ($this->owners->contains($owner) === false) {
             $this->owners->add($owner);
         }
     }

@@ -99,13 +99,13 @@ class CreateSchemaListener implements EventSubscriber
             throw new \Exception(sprintf('Inheritance type "%s" is not yet supported', $cm->inheritanceType));
         }
 
-        /////////////////// Added
+        // ///////////////// Added
         $revisionTable->addColumn('validated', 'boolean')->setNotnull(true)->setDefault(false);
-        $revisionTable->addIndex(array('validated'), 'validated_'.md5($revisionTable->getName()).'_idx');
-        $revisionTable->addIndex(array('project_id'), 'project_id_'.md5($revisionTable->getName()).'_idx');
-        
+        $revisionTable->addIndex(['validated'], 'validated_'.md5($revisionTable->getName()).'_idx');
+        $revisionTable->addIndex(['project_id'], 'project_id_'.md5($revisionTable->getName()).'_idx');
+
         $primaryKey = $entityTable->getPrimaryKey();
-        \assert(null !== $primaryKey);
+        \assert($primaryKey !== null);
         $pkColumns = $primaryKey->getColumns();
         $pkColumns[] = $this->config->getRevisionFieldName();
         $revisionTable->setPrimaryKey($pkColumns);
@@ -143,7 +143,7 @@ class CreateSchemaListener implements EventSubscriber
     {
         $revisionForeignKeyName = $this->config->getRevisionFieldName().'_'.md5($relatedTable->getName()).'_fk';
         $primaryKey = $revisionsTable->getPrimaryKey();
-        \assert(null !== $primaryKey);
+        \assert($primaryKey !== null);
 
         $relatedTable->addForeignKeyConstraint(
             $revisionsTable,
@@ -196,12 +196,13 @@ class CreateSchemaListener implements EventSubscriber
         $revisionsTable->addColumn('timestamp', Types::DATETIME_MUTABLE);
         $revisionsTable->addColumn('username', Types::STRING)->setNotnull(false);
         $revisionsTable->setPrimaryKey(['id']);
-        
-        /////////////////// Added
+
+        // ///////////////// Added
         $revisionsTable->addColumn('user_id', 'string')->setNotnull(false);
         $revisionsTable->addColumn('project', 'integer');
-        $revisionsTable->addIndex(array('project'), 'project_'.md5($revisionsTable->getName()).'_idx');
-        /////////////////// 
+        $revisionsTable->addIndex(['project'], 'project_'.md5($revisionsTable->getName()).'_idx');
+
+        // /////////////////
         return $revisionsTable;
     }
 
@@ -230,7 +231,7 @@ class CreateSchemaListener implements EventSubscriber
         $revisionJoinTable->addColumn($this->config->getRevisionTypeFieldName(), 'string', ['length' => 4]);
 
         $pk = $joinTable->getPrimaryKey();
-        $pkColumns = null !== $pk ? $pk->getColumns() : [];
+        $pkColumns = $pk !== null ? $pk->getColumns() : [];
         $pkColumns[] = $this->config->getRevisionFieldName();
         $revisionJoinTable->setPrimaryKey($pkColumns);
         $revIndexName = $this->config->getRevisionFieldName().'_'.md5($revisionJoinTable->getName()).'_idx';

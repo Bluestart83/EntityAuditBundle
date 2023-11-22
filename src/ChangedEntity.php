@@ -18,16 +18,24 @@ namespace SimpleThings\EntityAudit;
  */
 class ChangedEntity
 {
-
     /**
      * @param array<string, int|string> $id
      *
      * @phpstan-param class-string<T> $className
      * @phpstan-param T $entity
      */
-    public function __construct(private string $className, private array $id, private string $revType, private object $entity, private ?int $rev = null, private ?\DateTime $timestamp = null,
-                                private $user_id=null, private ?string $user_username=null, private ?string $user_firstName=null, private ?string $user_lastName=null)
-    {
+    public function __construct(
+        private string $className,
+        private array $id,
+        private string $revType,
+        private object $entity,
+        private ?int $rev = null,
+        private ?\DateTime $timestamp = null,
+        private $user_id = null,
+        private ?string $user_username = null,
+        private ?string $user_firstName = null,
+        private ?string $user_lastName = null
+    ) {
     }
 
     /**
@@ -75,10 +83,10 @@ class ChangedEntity
     /**
      * @return object
      */
-     public function getRevision()
-     {
-         return $this->rev;
-     }
+    public function getRevision()
+    {
+        return $this->rev;
+    }
 
     public function getUserId()
     {
@@ -102,19 +110,18 @@ class ChangedEntity
 
     public function getUserDisplayName()
     {
-        if( ($this->user_firstName!='' && $this->user_firstName!=null) || ($this->user_lastName!='' && $this->user_lastName!=null)) {
-
-            $parts = array();
-            if(($this->user_firstName!='' && $this->user_firstName!=null)) {
+        if (($this->user_firstName !== '' && $this->user_firstName !== null) || ($this->user_lastName !== '' && $this->user_lastName !== null)) {
+            $parts = [];
+            if ($this->user_firstName !== '' && $this->user_firstName !== null) {
                 $parts[] = $this->user_firstName;
             }
-            if(($this->user_lastName!='' && $this->user_lastName!=null)) {
+            if ($this->user_lastName !== '' && $this->user_lastName !== null) {
                 $parts[] = $this->user_lastName;
             }
+
             return implode(' ', $parts);
         }
-        else {
-            return $this->user_username;
-        }
+
+        return $this->user_username;
     }
 }

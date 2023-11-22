@@ -67,7 +67,7 @@ class UnidirectionalManyToManyEntity
 
     public function addLinkedEntity(UnidirectionalManyToManyLinkedEntity $linkedEntity): void
     {
-        if (false === $this->linkedEntity->contains($linkedEntity)) {
+        if ($this->linkedEntity->contains($linkedEntity) === false) {
             $this->linkedEntity->add($linkedEntity);
         }
     }
