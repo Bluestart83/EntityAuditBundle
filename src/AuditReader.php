@@ -361,7 +361,7 @@ class AuditReader
         // //////////////////////// ADDED
         $queryBuilder = $this->em->getConnection()->createQueryBuilder();
         $queryBuilder
-            ->select('r.*', 'u.first_name', 'u.last_name', 'u.username')
+            ->select('r.*', 'u.firstname', 'u.lastname', 'u.email')
             ->from($this->config->getRevisionTableName(), 'r')
             ->leftJoin('r', 'user', 'u', 'r.user_id = u.id')
             ->orderBy('r.id', 'DESC')
@@ -388,8 +388,8 @@ class AuditReader
                 $row['id'],
                 $timestamp,
                 $row['user_id'],
-                $row['first_name'],
-                $row['last_name'],
+                $row['firstname'],
+                $row['lastname'],
                 $row[ $projectField]
             ); // ADDED
         }
@@ -667,8 +667,8 @@ class AuditReader
                 $revisionsData[0]['id'],
                 $timestamp,
                 $revisionsData[0]['user_id'],
-                $revisionsData[0]['first_name'],
-                $revisionsData[0]['last_name'],
+                $revisionsData[0]['firstname'],
+                $revisionsData[0]['lastname'],
                 $revisionsData[0][$projectField]
             );
         }
@@ -735,8 +735,8 @@ class AuditReader
                 $row['id'],
                 $timestamp,
                 $row['user_id'],
-                $row['first_name'],
-                $row['last_name'],
+                $row['firstname'],
+                $row['lastname'],
                 $row[$projectField]
             );
         }
@@ -917,7 +917,7 @@ class AuditReader
 
         $whereSQL = implode(' AND ', $whereId);
         // $columnList = [$this->config->getRevisionFieldName()];
-        $columnList = [$this->config->getRevisionFieldName(), $this->config->getRevisionTypeFieldName(), 'r.username'];
+        $columnList = [$this->config->getRevisionFieldName(), $this->config->getRevisionTypeFieldName(), 'r.email'];
 
         $columnMap = [];
 
@@ -947,7 +947,7 @@ class AuditReader
 
         $values = array_values($id);
 
-        $selectAdditions = ", r.timestamp AS 'r.timestamp' , r.user_id AS 'r.user_id', u.first_name AS 'u.first_name', u.last_name AS 'u.last_name', u.username AS 'u.username'";
+        $selectAdditions = ", r.timestamp AS 'r.timestamp' , r.user_id AS 'r.user_id', u.firstname AS 'u.firstname', u.lastname AS 'u.lastname', u.email AS 'u.email'";
 
         $leftJoin = $this->config->getRevisionTableName().' r ON e.'.$this->config->getRevisionFieldName().'=r.id';
         $query = sprintf(
@@ -975,10 +975,10 @@ class AuditReader
 
             // dump($row);die;
             $user_id = $row['r.user_id'];
-            $username = $row['u.username'];
-            $first_name = $row['u.first_name'];
-            $last_name = $row['u.last_name'];
-            unset($row['r.user_id'], $row['u.username'], $row['u.first_name'], $row['u.last_name']);
+            $username = $row['u.email'];
+            $first_name = $row['u.firstname'];
+            $last_name = $row['u.lastname'];
+            unset($row['r.user_id'], $row['u.email'], $row['u.firstname'], $row['u.lastname']);
 
             $timestamp = $row['r.timestamp'];
             unset($row['r.timestamp']);
