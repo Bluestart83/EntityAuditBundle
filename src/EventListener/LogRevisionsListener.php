@@ -380,7 +380,7 @@ class LogRevisionsListener implements EventSubscriber
                 $this->config->getRevisionTableName(),
                 [
                     'timestamp' => $now,
-                    'user_id' => $this->config->getCurrentUsername(),
+                    'user_id' => $this->config->getCurrentUsername() == '' ? null : $this->config->getCurrentUsername(),
                     $projectField => $projectId
                 ],
                 [
