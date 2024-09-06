@@ -849,13 +849,13 @@ class AuditReader
         $metadata = $this->em->getClassMetadata($className);
         $fields = $metadata->getFieldNames();
 
-        $fieldsExternal = $metadata->getAssociationMappings(); // ADDED
         $return = [];
         foreach ($fields as $fieldName) {
             $return[$fieldName] = $metadata->getFieldValue($entity, $fieldName);
         }
 
         // External mapping
+        $fieldsExternal = $metadata->getAssociationMappings(); // ADDED
         foreach ($fieldsExternal as $fieldName => $data) {
             $value = $metadata->getFieldValue($entity, $fieldName);
 
@@ -864,7 +864,7 @@ class AuditReader
                 $label = $value->__toString();
             } catch (\Exception $e) {
             }
-            $return[$fieldName] = ['id' => $value->getId(), 'label' => $value->__toString()];
+            $return[$fieldName] = ['id' => $value->getId(), 'label' => $label];
             // dump ($metadata->getFieldValue($entity, 'project'));die;
         }
 

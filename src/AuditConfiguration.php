@@ -45,6 +45,10 @@ class AuditConfiguration
 
     private string $revisionIdFieldType = Types::INTEGER;
 
+    private string $projectFieldName = 'site';
+
+    private string $projectIdFieldName = 'site_id';
+
     /**
      * @var callable|null
      */
@@ -145,23 +149,6 @@ class AuditConfiguration
     public function getRevisionTypeFieldName()
     {
         return $this->revisionTypeFieldName;
-    }
-
-    ///ALI
-    /**
-     * @return string
-     */
-    public function getProjectIdFieldName()
-    {
-        return 'site_id';
-    }
-
-    /**
-     * @return string
-     */
-    public function getProjectFieldName()
-    {
-        return 'site';
     }
 
     /**
@@ -277,5 +264,42 @@ class AuditConfiguration
     public function getRevisionIdFieldType()
     {
         return $this->revisionIdFieldType;
+    }
+
+      ///ALI
+    /**
+     * // Added
+     * @return string
+     */
+    public function getProjectIdFieldName()
+    {
+        return $this->projectIdFieldName;
+    }
+
+    /**
+     * // Added
+     * @param string $projectIdFieldName
+     */
+    public function setProjectIdFieldName($projectIdFieldName): void
+    {
+        $this->projectIdFieldName = $projectIdFieldName;
+    }
+
+    /**
+     * // Added
+     * @return string
+     */
+    public function getProjectFieldName()
+    {
+        return $this->projectFieldName;
+    }
+
+    /**
+     *  // Added
+     * @param string $projectFieldName
+     */
+    public function setProjectFieldName($projectFieldName): void
+    {
+        $this->projectFieldName = $projectFieldName;
     }
 }
