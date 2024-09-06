@@ -49,7 +49,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
         ->set('simplethings.entityaudit.revision_id_field_type', null)
 
-        ->set('simplethings.entityaudit.disable_foreign_keys', null);
+        ->set('simplethings.entityaudit.disable_foreign_keys', null)
+        
+        ->set('simplethings.entityaudit.project_id_field_name', null)
+        ->set('simplethings.entityaudit.project_field_name', null);
 
     $containerConfigurator->services()
         ->set('simplethings_entityaudit.manager', AuditManager::class)
@@ -130,7 +133,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             ->call('setRevisionFieldName', [param('simplethings.entityaudit.revision_field_name')])
             ->call('setRevisionTypeFieldName', [param('simplethings.entityaudit.revision_type_field_name')])
             ->call('setUsernameCallable', [service('simplethings_entityaudit.username_callable')])
-            ->call('setProjectIdFieldName', [service('simplethings_entityaudit.project_id_field_name')])
-            ->call('setProjectFieldName', [service('simplethings_entityaudit.project_field_name')])
+            ->call('setProjectIdFieldName', [param('simplethings.entityaudit.project_id_field_name')])
+            ->call('setProjectFieldName', [param('simplethings.entityaudit.project_field_name')])
             ->alias(AuditConfiguration::class, 'simplethings_entityaudit.config');
 };

@@ -55,6 +55,10 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('revision_type_field_name')->defaultValue('revtype')->end()
                 ->scalarNode('revision_table_name')->defaultValue('revisions')->end()
                 ->scalarNode('disable_foreign_keys')->defaultValue(false)->end()
+
+                ->scalarNode('project_id_field_name')->defaultValue('project_id')->end()
+                ->scalarNode('project_field_name')->defaultValue('project')->end()
+                
                 ->scalarNode('revision_id_field_type')
                     ->defaultValue(Types::INTEGER)
                     // NEXT_MAJOR: Use enumNode() instead.
@@ -81,7 +85,7 @@ class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
             ->end();
-
+            
         return $builder;
     }
 }
