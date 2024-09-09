@@ -414,7 +414,8 @@ class AuditReader
         bool $validated = true,
         bool $filterDeleted = true,
         bool $filterCreated = true,
-        ?int $toRevision = null
+        ?int $toRevision = null,
+        ?string $orderBy = null
     ) {
         /** @var ClassMetadataInfo|ClassMetadata $class */
         $class = $this->em->getClassMetadata($className);
@@ -507,8 +508,10 @@ class AuditReader
             .' WHERE '.$whereSQL
          //   . ' ORDER BY e.reference'
          ;
-    
 
+         if($orderBy != null) {
+            $query .= ' ORDER BY '.$orderBy;
+         }
     
         // Execute the query
         $revisionsData = $this->em->getConnection()->executeQuery($query, $params)->fetchAllAssociative();
