@@ -56,6 +56,7 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('revision_table_name')->defaultValue('revisions')->end()
                 ->scalarNode('disable_foreign_keys')->defaultValue(false)->end()
 
+                ->scalarNode('project_classname')->defaultValue('\App\Entity\Project')->end()
                 ->scalarNode('project_id_field_name')->defaultValue('project_id')->end()
                 ->scalarNode('project_field_name')->defaultValue('project')->end()
                 

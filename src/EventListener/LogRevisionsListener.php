@@ -357,18 +357,22 @@ class LogRevisionsListener implements EventSubscriber
 
         //$projectId = $entity->getProject()->getId();
         $projectId = null;
-        $fieldName = $this->config->getProjectFieldName();
+        $fieldName = $this->config->getProjectFieldName(); // siteId in other entities
+        $projectClassName = $this->config->getProjectClassname();
         $propertyAccessor = PropertyAccess::createPropertyAccessor();
 
-        if($entity instanceof \App\Entity\Site) {
+
+        if($entity instanceof $projectClassName) {
             if ($propertyAccessor->isReadable($entity, 'id')) {
                 $projectId = $propertyAccessor->getValue($entity, 'id');
             } 
         }
         else {
+            $cl2 = "\App\Entity\Fiche";
+            $test = $entity instanceof $cl2;
             if ($propertyAccessor->isReadable($entity, $fieldName)) {
                 $project = $propertyAccessor->getValue($entity, $fieldName);
-                if($propertyAccessor->isReadable($project, 'id')) {
+                if($project != null && $propertyAccessor->isReadable($project, 'id')) {
                     $projectId = $propertyAccessor->getValue($project, 'id');
                 }
             } 

@@ -45,6 +45,9 @@ class AuditConfiguration
 
     private string $revisionIdFieldType = Types::INTEGER;
 
+    
+    private ?string $projectClassname = null;
+
     private ?string $projectFieldName = 'site';
 
     private ?string $projectIdFieldName = 'site_id';
@@ -284,7 +287,7 @@ class AuditConfiguration
     {
         $this->projectIdFieldName = $projectIdFieldName;
     }
-
+    
     /**
      * // Added
      * @return ?string
@@ -292,6 +295,24 @@ class AuditConfiguration
     public function getProjectFieldName()
     {
         return $this->projectFieldName;
+    }
+
+    /**
+     * // Added
+     * @param ?string $projectClassname
+     */
+    public function setProjectClassname($projectClassname): void
+    {
+        $this->projectClassname = $projectClassname;
+    }
+    
+    /**
+     * // Added
+     * @return ?string
+     */
+    public function getProjectClassname()
+    {
+        return $this->projectClassname;
     }
 
     /**

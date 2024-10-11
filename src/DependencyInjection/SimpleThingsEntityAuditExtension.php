@@ -40,6 +40,7 @@ class SimpleThingsEntityAuditExtension extends Extension
             'revision_id_field_type',
             'global_ignore_columns',
             'disable_foreign_keys',
+            'project_classname',
             'project_id_field_name',
             'project_field_name',
         ];
