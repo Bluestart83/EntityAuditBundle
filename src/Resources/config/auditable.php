@@ -96,6 +96,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
                 'event' => Events::onClear,
                 'connection' => (string) param('simplethings.entityaudit.connection'),
             ])
+            ->tag('doctrine.event_listener', [
+                'event' => LogRevisionsListener::POST_SOFT_DELETE,
+                'connection' => (string) param('simplethings.entityaudit.connection'),
+            ])
             ->args([
                 service('simplethings_entityaudit.manager'),
                 service(ClockInterface::class)->nullOnInvalid(),

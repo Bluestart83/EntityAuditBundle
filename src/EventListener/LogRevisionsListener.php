@@ -29,8 +29,10 @@ use Doctrine\ORM\Event\PostFlushEventArgs;
 use SimpleThings\EntityAudit\AuditManager;
 use Doctrine\ORM\Event\PostUpdateEventArgs;
 use Doctrine\ORM\Event\PostPersistEventArgs;
+use Gedmo\SoftDeleteable\Event\PostSoftDeleteEventArgs;
 use SimpleThings\EntityAudit\AuditConfiguration;
 use Doctrine\Persistence\Mapping\MappingException;
+use Doctrine\Persistence\ObjectManager;
 use Doctrine\ORM\Persisters\Entity\EntityPersister;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use SimpleThings\EntityAudit\Metadata\MetadataFactory;
@@ -41,6 +43,11 @@ use SimpleThings\EntityAudit\DeferredChangedManyToManyEntityRevisionToPersist;
  */
 class LogRevisionsListener implements EventSubscriber
 {
+    /**
+     * Event dispatched by Gedmo SoftDeleteable once it has turned a deletion into an update.
+     */
+    public const POST_SOFT_DELETE = 'postSoftDelete';
+
     private AuditConfiguration $config;
 
     private MetadataFactory $metadataFactory;
@@ -73,6 +80,20 @@ class LogRevisionsListener implements EventSubscriber
      */
     private array $deferredChangedManyToManyEntityRevisionsToPersist = [];
 
+    /**
+     * Entities whose deletion this listener recorded during the current flush, by object id.
+     *
+     * @var array<int, true>
+     */
+    private array $recordedDeletions = [];
+
+    /**
+     * Entities soft deleted before this listener's onFlush ran in the current flush, by object id.
+     *
+     * @var array<int, object>
+     */
+    private array $pendingSoftDeletions = [];
+
     public function __construct(
         AuditManager $auditManager,
         private ?ClockInterface $clock = null
@@ -89,7 +110,36 @@ class LogRevisionsListener implements EventSubscriber
     #[\ReturnTypeWillChange]
     public function getSubscribedEvents()
     {
-        return [Events::onFlush, Events::postPersist, Events::postUpdate, Events::postFlush, Events::onClear];
+        return [Events::onFlush, Events::postPersist, Events::postUpdate, Events::postFlush, Events::onClear, self::POST_SOFT_DELETE];
+    }
+
+    /**
+     * Gedmo SoftDeleteable cancels the scheduled deletion during its own onFlush and replaces it with
+     * an extra update of the deletedAt field, which fires no Doctrine lifecycle event. The deletion is
+     * recorded here whichever of the two onFlush listeners runs first.
+     *
+     * @param PostSoftDeleteEventArgs<ObjectManager> $eventArgs
+     */
+    public function postSoftDelete(PostSoftDeleteEventArgs $eventArgs): void
+    {
+        $em = $eventArgs->getObjectManager();
+        $entity = $eventArgs->getObject();
+
+        if (!$em instanceof EntityManagerInterface || !$this->metadataFactory->isAudited($entity::class)) {
+            return;
+        }
+
+        $oid = spl_object_id($entity);
+
+        if (isset($this->recordedDeletions[$oid])) {
+            // The DEL row is already written with the values before the soft delete: postFlush
+            // completes it with the soft delete change set.
+            $this->extraUpdates[spl_object_hash($entity)] = $entity;
+
+            return;
+        }
+
+        $this->pendingSoftDeletions[$oid] = $entity;
     }
 
     /**
@@ -200,6 +250,7 @@ class LogRevisionsListener implements EventSubscriber
         }
 
         $this->deferredChangedManyToManyEntityRevisionsToPersist = [];
+        $this->recordedDeletions = [];
     }
 
     public function postPersist(PostPersistEventArgs $eventArgs): void
@@ -258,6 +309,8 @@ class LogRevisionsListener implements EventSubscriber
     public function onClear(): void
     {
         $this->extraUpdates = [];
+        $this->recordedDeletions = [];
+        $this->pendingSoftDeletions = [];
     }
 
     public function onFlush(OnFlushEventArgs $eventArgs): void
@@ -265,6 +318,7 @@ class LogRevisionsListener implements EventSubscriber
         $em = $eventArgs->getObjectManager();
         $uow = $em->getUnitOfWork();
         $this->revisionId = null; // reset revision
+        $this->recordedDeletions = [];
 
         $processedEntities = [];
 
@@ -289,7 +343,29 @@ class LogRevisionsListener implements EventSubscriber
                 $this->getManyToManyRelations($em, $entity)
             );
             $this->saveRevisionEntityData($em, $class, $entityData, 'DEL', $entity);
+            $this->recordedDeletions[spl_object_id($entity)] = true;
         }
+
+        foreach ($this->pendingSoftDeletions as $oid => $entity) {
+            $hash = $this->getHash($uow, $entity);
+
+            if (\in_array($hash, $processedEntities, true)) {
+                continue;
+            }
+
+            $processedEntities[] = $hash;
+
+            $entityData = array_merge(
+                $this->getOriginalEntityData($em, $entity),
+                $uow->getEntityIdentifier($entity),
+                $this->getManyToManyRelations($em, $entity),
+                $this->getChangedFieldValues($em, $entity)
+            );
+            $this->saveRevisionEntityData($em, $em->getClassMetadata($entity::class), $entityData, 'DEL', $entity);
+            $this->recordedDeletions[$oid] = true;
+        }
+
+        $this->pendingSoftDeletions = [];
 
         foreach ($uow->getScheduledEntityInsertions() as $entity) {
             if (!$this->metadataFactory->isAudited($entity::class)) {
@@ -329,6 +405,25 @@ class LogRevisionsListener implements EventSubscriber
     }
 
     /**
+     * New values of the fields and to-one associations in the entity change set.
+     *
+     * @return array<string, mixed>
+     */
+    private function getChangedFieldValues(EntityManagerInterface $em, object $entity): array
+    {
+        $class = $em->getClassMetadata($entity::class);
+        $values = [];
+
+        foreach ($em->getUnitOfWork()->getEntityChangeSet($entity) as $field => $change) {
+            if ($class->hasField($field) || $class->isSingleValuedAssociation($field)) {
+                $values[$field] = $change[1];
+            }
+        }
+
+        return $values;
+    }
+
+    /**
      * Get many to many relations data.
      *
      * @return array<string, mixed>
@@ -362,14 +457,12 @@ class LogRevisionsListener implements EventSubscriber
         $propertyAccessor = PropertyAccess::createPropertyAccessor();
 
 
-        if($entity instanceof $projectClassName) {
+        if ($projectClassName !== null && $entity instanceof $projectClassName) {
             if ($propertyAccessor->isReadable($entity, 'id')) {
                 $projectId = $propertyAccessor->getValue($entity, 'id');
             } 
         }
         else {
-            $cl2 = "\App\Entity\Fiche";
-            $test = $entity instanceof $cl2;
             if ($propertyAccessor->isReadable($entity, $fieldName)) {
                 $project = $propertyAccessor->getValue($entity, $fieldName);
                 if($project != null && $propertyAccessor->isReadable($project, 'id')) {
@@ -644,7 +737,7 @@ class LogRevisionsListener implements EventSubscriber
     private function recordRevisionForManyToManyEntity(object $relatedEntity, EntityManagerInterface $em, string $revType, array $entityData, array $assoc, ClassMetadata $class, ClassMetadata $targetClass): void
     {
         $conn = $em->getConnection();
-        $joinTableParams = [$this->getRevisionId($conn), $revType];
+        $joinTableParams = [$this->getRevisionId($conn, $relatedEntity), $revType];
         $joinTableTypes = [\PDO::PARAM_INT, \PDO::PARAM_STR];
         foreach ($assoc['relationToSourceKeyColumns'] as $targetColumn) {
             $joinTableParams[] = $entityData[$class->fieldNames[$targetColumn]];
