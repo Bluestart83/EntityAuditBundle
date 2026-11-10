@@ -84,6 +84,28 @@ final class IssueSoftDeleteTest extends BaseTest
     /**
      * @dataProvider provideListenerOrder
      */
+    public function testOrphanRemovalSoftDeleteOfReloadedEntityIsAudited(bool $softDeleteFirst): void
+    {
+        $this->setUpWithListenerOrder($softDeleteFirst);
+        $em = $this->getEntityManager();
+        [, $child] = $this->createParentWithChild();
+        $id = $child->getId();
+        $em->clear();
+
+        $child = $em->find(SoftDeleteOrphanChild::class, $id);
+        static::assertNotNull($child);
+        $parent = $child->getParent();
+        static::assertNotNull($parent);
+
+        $parent->removeChild($child);
+        $em->flush();
+
+        $this->assertSoftDeleteRecorded($child);
+    }
+
+    /**
+     * @dataProvider provideListenerOrder
+     */
     public function testHardDeleteOfSoftDeletedEntityWritesOneDeletion(bool $softDeleteFirst): void
     {
         $this->setUpWithListenerOrder($softDeleteFirst);
