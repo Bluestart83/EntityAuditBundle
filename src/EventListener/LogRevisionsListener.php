@@ -362,14 +362,12 @@ class LogRevisionsListener implements EventSubscriber
         $propertyAccessor = PropertyAccess::createPropertyAccessor();
 
 
-        if($entity instanceof $projectClassName) {
+        if ($projectClassName !== null && $entity instanceof $projectClassName) {
             if ($propertyAccessor->isReadable($entity, 'id')) {
                 $projectId = $propertyAccessor->getValue($entity, 'id');
             } 
         }
         else {
-            $cl2 = "\App\Entity\Fiche";
-            $test = $entity instanceof $cl2;
             if ($propertyAccessor->isReadable($entity, $fieldName)) {
                 $project = $propertyAccessor->getValue($entity, $fieldName);
                 if($project != null && $propertyAccessor->isReadable($project, 'id')) {
@@ -644,7 +642,7 @@ class LogRevisionsListener implements EventSubscriber
     private function recordRevisionForManyToManyEntity(object $relatedEntity, EntityManagerInterface $em, string $revType, array $entityData, array $assoc, ClassMetadata $class, ClassMetadata $targetClass): void
     {
         $conn = $em->getConnection();
-        $joinTableParams = [$this->getRevisionId($conn), $revType];
+        $joinTableParams = [$this->getRevisionId($conn, $relatedEntity), $revType];
         $joinTableTypes = [\PDO::PARAM_INT, \PDO::PARAM_STR];
         foreach ($assoc['relationToSourceKeyColumns'] as $targetColumn) {
             $joinTableParams[] = $entityData[$class->fieldNames[$targetColumn]];
