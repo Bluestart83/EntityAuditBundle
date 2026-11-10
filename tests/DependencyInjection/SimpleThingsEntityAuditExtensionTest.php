@@ -40,7 +40,7 @@ final class SimpleThingsEntityAuditExtensionTest extends AbstractExtensionTestCa
         $this->assertContainerBuilderHasService('simplethings_entityaudit.log_revisions_listener', LogRevisionsListener::class);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('simplethings_entityaudit.log_revisions_listener', 0, 'simplethings_entityaudit.manager');
 
-        foreach ([Events::onFlush, Events::postPersist, Events::postUpdate, Events::postFlush, Events::onClear] as $event) {
+        foreach ([Events::onFlush, Events::postPersist, Events::postUpdate, Events::postFlush, Events::onClear, LogRevisionsListener::POST_SOFT_DELETE] as $event) {
             $this->assertContainerBuilderHasServiceDefinitionWithTag('simplethings_entityaudit.log_revisions_listener', 'doctrine.event_listener', ['event' => $event, 'connection' => 'default']);
         }
         $this->assertContainerBuilderHasService('simplethings_entityaudit.create_schema_listener', CreateSchemaListener::class);
@@ -134,7 +134,7 @@ final class SimpleThingsEntityAuditExtensionTest extends AbstractExtensionTestCa
         $this->assertContainerBuilderHasParameter('simplethings.entityaudit.revision_type_field_name', 'action');
         $this->assertContainerBuilderHasParameter('simplethings.entityaudit.disable_foreign_keys', false);
 
-        foreach ([Events::onFlush, Events::postPersist, Events::postUpdate, Events::postFlush, Events::onClear] as $event) {
+        foreach ([Events::onFlush, Events::postPersist, Events::postUpdate, Events::postFlush, Events::onClear, LogRevisionsListener::POST_SOFT_DELETE] as $event) {
             $this->assertContainerBuilderHasServiceDefinitionWithTag('simplethings_entityaudit.log_revisions_listener', 'doctrine.event_listener', ['event' => $event, 'connection' => 'my_custom_connection']);
         }
         foreach ([ToolEvents::postGenerateSchemaTable, ToolEvents::postGenerateSchema] as $event) {
